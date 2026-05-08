@@ -6,13 +6,17 @@
 
 ### [**》》 点我直接使用 《《**](https://gtxx3600.github.io/GPTSession2CPAandSub2API/)
 
+## 使用提示
+
+Plus 号可以用此方式导入中转站使用；Free 号的 access token 不能用于调用接口。
+
 ## 支持输入
 
 支持粘贴或拖入 ChatGPT Web session JSON，例如包含：
 
 - `user.email`
-- `user.name`
 - `accessToken`
+- `sessionToken`
 - `expires`
 - `account.id`
 - `account.planType`
@@ -21,7 +25,7 @@
 
 ## 输出格式
 
-- `CPA`：生成最小 Codex CPA JSON，包含 `type: "codex"`、`access_token`、`email`、`name`、过期时间等可推导字段。
+- `CPA`：生成最小 Codex CPA JSON，包含 `type: "codex"`、`access_token`、`session_token`、`email`、`name`、过期时间等可推导字段。
 - `sub2api`：生成参考 `CPA2sub2API` 项目的 `exported_at/proxies/accounts` 结构，账号平台为 `openai`，类型为 `oauth`。
 ChatGPT Web session 通常不包含 CPA OAuth 文件里常见的 `refresh_token` 和 `id_token`，因此 CPA 输出不会伪造这些字段。
 

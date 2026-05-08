@@ -573,7 +573,7 @@
                 <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noreferrer">https://chatgpt.com/api/auth/session</a>
                 ，复制页面显示的整段 JSON，粘贴到下方输入框。
               </p>
-              <p class="session-warning">这段 JSON 包含 accessToken，等同敏感登录凭证，不要发给别人。</p>
+              <p class="session-warning">这段 JSON 包含 accessToken 和 sessionToken，等同敏感登录凭证，不要发给别人。</p>
             </div>
             <div class="dropzone" id="dropzone" tabindex="0" role="button">
               <div>
@@ -590,7 +590,7 @@
             <textarea
               id="session-input"
               spellcheck="false"
-              placeholder='{"user":{"name":"Mark Anderson","email":"mark@example.com"},"expires":"2026-08-06T14:29:36.155Z","account":{"id":"...","planType":"free"},"accessToken":"..."}'
+              placeholder='{"user":{"email":"mark@example.com"},"expires":"2026-08-06T14:29:36.155Z","account":{"id":"...","planType":"plus"},"accessToken":"...","sessionToken":"..."}'
             ></textarea>
             <div class="status-line" id="input-status">等待输入。</div>
           </div>
@@ -692,15 +692,15 @@
         const exampleSession = {
           user: {
             id: "user-example",
-            name: "Mark Anderson",
             email: "mark@example.com",
           },
           expires: "2026-08-06T14:29:36.155Z",
           account: {
             id: "00000000-0000-4000-9000-000000000000",
-            planType: "free",
+            planType: "plus",
           },
           accessToken: "paste-real-access-token-here",
+          sessionToken: "paste-real-session-token-here",
           authProvider: "openai",
         };
 
@@ -948,6 +948,13 @@
           if (!accessToken) {
             throw new Error("缺少 accessToken");
           }
+          const sessionToken = firstNonEmpty(
+            record.sessionToken,
+            record.session_token,
+            record.token?.sessionToken,
+            record.token?.session_token,
+            record.credentials?.session_token,
+          );
 
           const payload = parseJwtPayload(accessToken);
           const auth = getOpenAIAuthSection(payload);
@@ -964,13 +971,6 @@
             record.credentials?.email,
             profile.email,
             payload?.email,
-          );
-          const name = firstNonEmpty(
-            record.user?.name,
-            record.name,
-            profile.name,
-            email,
-            "ChatGPT Account",
           );
           const accountId = firstNonEmpty(
             record.account?.id,
@@ -994,10 +994,12 @@
           const exportedAt = normalizeTimestamp(options.now || new Date());
           const expiresIn = getExpiresIn(expiresAt, options.now || new Date());
           const sourceName = firstNonEmpty(options.sourceName, "pasted-json");
+          const name = firstNonEmpty(email, sourceName, "ChatGPT Account");
 
           const cpa = stripUnavailable({
             type: "codex",
             access_token: accessToken,
+            session_token: sessionToken,
             account_id: accountId,
             email,
             name,
