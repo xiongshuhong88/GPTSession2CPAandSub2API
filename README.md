@@ -2,6 +2,10 @@
 
 纯前端单页面工具，用来把 ChatGPT Web 登录 session JSON 转换成 CPA 或 sub2api 可导入 JSON。
 
+## 在线使用
+
+### [**》》 点我直接使用 《《**](https://gtxx3600.github.io/GPTSession2CPAandSub2API/)
+
 ## 支持输入
 
 支持粘贴或拖入 ChatGPT Web session JSON，例如包含：

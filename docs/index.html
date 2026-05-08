@@ -250,6 +250,43 @@
         color: var(--text);
       }
 
+      .session-guide {
+        margin: 0 0 12px;
+        padding: 13px 14px;
+        border: 1px solid rgba(36, 80, 90, 0.34);
+        border-left: 5px solid var(--accent);
+        border-radius: var(--radius);
+        background: #eaf5f7;
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      .session-guide strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--accent-strong);
+        font-size: 0.98rem;
+      }
+
+      .session-guide p {
+        margin: 0;
+        color: #33464d;
+        font-size: 0.9rem;
+      }
+
+      .session-guide a {
+        color: var(--accent-strong);
+        font-family: var(--mono);
+        font-weight: 800;
+        overflow-wrap: anywhere;
+      }
+
+      .session-guide .session-warning {
+        margin-top: 7px;
+        color: var(--danger);
+        font-weight: 700;
+      }
+
       .input-actions {
         display: flex;
         flex-wrap: wrap;
@@ -529,6 +566,15 @@
             </div>
           </div>
           <div class="panel-body">
+            <div class="session-guide">
+              <strong>Session 数据从这里获取</strong>
+              <p>
+                先在浏览器登录 ChatGPT，然后打开
+                <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noreferrer">https://chatgpt.com/api/auth/session</a>
+                ，复制页面显示的整段 JSON，粘贴到下方输入框。
+              </p>
+              <p class="session-warning">这段 JSON 包含 accessToken，等同敏感登录凭证，不要发给别人。</p>
+            </div>
             <div class="dropzone" id="dropzone" tabindex="0" role="button">
               <div>
                 <strong>拖入 JSON 文件</strong>
