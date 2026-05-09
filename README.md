@@ -10,6 +10,14 @@
 
 Plus 号可以用此方式导入中转站使用；Free 号的 access token 不能用于调用接口。
 
+Discord 频道每日签到领取免费 plus 账号：
+
+### [**》》 加入 Discord 频道 《《**](https://discord.gg/GFmHY2TZNy)
+
+邀请链接：`https://discord.gg/GFmHY2TZNy`
+
+本工具主要针对 Plus 账号适用，Free 账号即使转换了也没有权限调用 GPT 模型。Plus 账号可以在 Discord 频道每日签到领取激活，然后配合本工具导入 CPA or Sub2API 使用。
+
 ## 支持输入
 
 支持粘贴或拖入 ChatGPT Web session JSON，例如包含：
