@@ -636,7 +636,7 @@
           </div>
           <div class="panel-body">
             <p class="notice" id="cpa-notice">
-              ChatGPT Web session 一般没有 `refresh_token` 和 `id_token`；CPA 输出只包含 access token 和可推导字段。
+              ChatGPT Web session 一般没有 `refresh_token`；缺少真实 `id_token` 时会构造 CPA 可解析的占位 claims，实际调用仍依赖 access token。
             </p>
             <div class="summary" aria-label="转换统计">
               <div class="stat">
@@ -765,6 +765,18 @@
           return new TextDecoder().decode(bytes);
         }
 
+        function bytesToBase64Url(bytes) {
+          let binary = "";
+          for (let index = 0; index < bytes.length; index += 0x8000) {
+            binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+          }
+          return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+        }
+
+        function encodeBase64UrlJson(value) {
+          return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(value)));
+        }
+
         function parseJwtPayload(token) {
           if (typeof token !== "string" || token.trim() === "") {
             return undefined;
@@ -827,6 +839,51 @@
 
           const date = new Date(numeric * 1000);
           return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+        }
+
+        function epochSecondsFromValue(value) {
+          if (value === undefined || value === null || value === "") {
+            return 0;
+          }
+
+          const numeric = Number(value);
+          if (Number.isFinite(numeric)) {
+            return Math.trunc(numeric > 1e11 ? numeric / 1000 : numeric);
+          }
+
+          const parsed = Date.parse(String(value));
+          return Number.isFinite(parsed) ? Math.trunc(parsed / 1000) : 0;
+        }
+
+        function buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt) {
+          if (!accountId) {
+            return undefined;
+          }
+
+          const now = Math.trunc(Date.now() / 1000);
+          const authInfo = { chatgpt_account_id: accountId };
+          const expires = epochSecondsFromValue(expiresAt) || now + 90 * 24 * 60 * 60;
+
+          if (planType) {
+            authInfo.chatgpt_plan_type = planType;
+          }
+
+          if (userId) {
+            authInfo.chatgpt_user_id = userId;
+            authInfo.user_id = userId;
+          }
+
+          const payload = {
+            iat: now,
+            exp: expires,
+            "https://api.openai.com/auth": authInfo,
+          };
+
+          if (email) {
+            payload.email = email;
+          }
+
+          return `${encodeBase64UrlJson({ alg: "none", typ: "JWT", cpa_synthetic: true })}.${encodeBase64UrlJson(payload)}.`;
         }
 
         function getExpiresIn(expiresAt, now = new Date()) {
@@ -986,9 +1043,25 @@
             record.token?.session_token,
             record.credentials?.session_token,
           );
+          const refreshToken = firstNonEmpty(
+            record.refreshToken,
+            record.refresh_token,
+            record.token?.refreshToken,
+            record.token?.refresh_token,
+            record.credentials?.refresh_token,
+          );
+          const inputIdToken = firstNonEmpty(
+            record.idToken,
+            record.id_token,
+            record.token?.idToken,
+            record.token?.id_token,
+            record.credentials?.id_token,
+          );
 
           const payload = parseJwtPayload(accessToken);
+          const idPayload = parseJwtPayload(inputIdToken);
           const auth = getOpenAIAuthSection(payload);
+          const idAuth = getOpenAIAuthSection(idPayload);
           const profile = getOpenAIProfileSection(payload);
           const expiresAt = firstNonEmpty(
             normalizeTimestamp(record.expires),
@@ -1001,6 +1074,7 @@
             record.email,
             record.credentials?.email,
             profile.email,
+            idPayload?.email,
             payload?.email,
           );
           const accountId = firstNonEmpty(
@@ -1008,12 +1082,15 @@
             record.account_id,
             record.credentials?.chatgpt_account_id,
             auth.chatgpt_account_id,
+            idAuth.chatgpt_account_id,
           );
           const userId = firstNonEmpty(
             record.user?.id,
             record.user_id,
             auth.chatgpt_user_id,
             auth.user_id,
+            idAuth.chatgpt_user_id,
+            idAuth.user_id,
           );
           const planType = firstNonEmpty(
             record.account?.planType,
@@ -1021,22 +1098,33 @@
             record.plan_type,
             record.credentials?.plan_type,
             auth.chatgpt_plan_type,
+            idAuth.chatgpt_plan_type,
           );
           const exportedAt = normalizeTimestamp(options.now || new Date());
           const expiresIn = getExpiresIn(expiresAt, options.now || new Date());
           const sourceName = firstNonEmpty(options.sourceName, "pasted-json");
           const name = firstNonEmpty(email, sourceName, "ChatGPT Account");
+          const syntheticIdToken = !inputIdToken
+            ? buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt)
+            : undefined;
+          const idToken = firstNonEmpty(inputIdToken, syntheticIdToken);
 
           const cpa = stripUnavailable({
             type: "codex",
-            access_token: accessToken,
-            session_token: sessionToken,
             account_id: accountId,
+            chatgpt_account_id: accountId,
             email,
             name,
-            expired: expiresAt,
-            last_refresh: exportedAt,
             plan_type: planType,
+            chatgpt_plan_type: planType,
+            id_token: idToken,
+            id_token_synthetic: Boolean(syntheticIdToken) || undefined,
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            session_token: sessionToken,
+            last_refresh: exportedAt,
+            expired: expiresAt,
+            disabled: Boolean(record.disabled) || undefined,
           });
 
           const sub2apiAccount = stripUnavailable({
