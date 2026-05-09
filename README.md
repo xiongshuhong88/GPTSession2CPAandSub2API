@@ -10,13 +10,18 @@
 
 Plus 号可以用此方式导入中转站使用；Free 号的 access token 不能用于调用接口。
 
-Discord 频道每日签到领取免费 plus 账号：
+本工具可用来解决 Codex OAuth 登录需要绑定手机的问题。Plus 账号通过 Web 登录后的 session 就能生成可导入中转站的账号 JSON 数据；这类数据没有 `refresh_token`，但 `access_token` 有效期通常足够长。
+
+解释一下： plus激活前（free状态）或激活后（plus状态）获取的session在使用上没有区别（free时拿到的session, 激活plus后就可以调模型了），只是账号级别标识有点区别（标识为free or plus），不影响调模型。 换句话讲，不管你啥时候拿到的session, 用本项目转换导入中转站，只要账号当前激活了plus, 就能正常调模型接口。
+
+本工具主要针对 Plus 账号适用，Free 账号即使转换了也没有权限调用 GPT 模型。Plus 账号可以在 Discord 频道每日签到领取激活，然后配合本工具导入 CPA or Sub2API 使用。
+
+## **Discord 频道每日签到领取免费 plus 账号（每天都能领一个plus）：**
 
 ### [**》》 加入 Discord 频道 《《**](https://discord.gg/GFmHY2TZNy)
 
 邀请链接：`https://discord.gg/GFmHY2TZNy`
 
-本工具主要针对 Plus 账号适用，Free 账号即使转换了也没有权限调用 GPT 模型。Plus 账号可以在 Discord 频道每日签到领取激活，然后配合本工具导入 CPA or Sub2API 使用。
 
 ## 支持输入
 
