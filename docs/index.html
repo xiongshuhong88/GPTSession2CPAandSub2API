@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChatGPT Session -> CPA / sub2api / Cockpit</title>
+    <title>Codex格式转换</title>
     <meta name="theme-color" content="#24505a" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any" />
     <style>
@@ -34,8 +34,9 @@
 
       html,
       body {
-        min-height: 100%;
+        height: 100%;
         margin: 0;
+        overflow: hidden;
       }
 
       body {
@@ -57,71 +58,75 @@
       }
 
       .app {
+        display: flex;
+        flex-direction: column;
         width: min(1280px, calc(100vw - 32px));
+        height: 100dvh;
         margin: 0 auto;
-        padding: 22px 0 28px;
+        padding: 14px 0;
+        overflow: hidden;
       }
 
       .topbar {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 18px;
-        margin-bottom: 16px;
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .topbar .shop-card {
+        width: 100%;
       }
 
       .title-block {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
         min-width: 0;
       }
 
-      .eyebrow {
-        margin: 0 0 7px;
+      .title-separator {
         color: var(--accent);
-        font-size: 0.78rem;
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--accent);
+        font-size: 1rem;
         font-weight: 800;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
+        letter-spacing: 0;
+        white-space: nowrap;
       }
 
       h1 {
         margin: 0;
-        font-size: clamp(1.65rem, 3vw, 2.7rem);
+        font-size: clamp(1.55rem, 2.5vw, 2.35rem);
         line-height: 1.08;
         letter-spacing: 0;
-      }
-
-      .title-targets {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 12px;
-      }
-
-      .title-targets span {
-        display: inline-flex;
-        align-items: center;
-        min-height: 30px;
-        padding: 5px 10px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--surface);
-        color: var(--accent);
-        font-size: 0.86rem;
-        font-weight: 800;
       }
 
       .meta-row {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        justify-content: flex-end;
+        justify-content: flex-start;
+      }
+
+      .input-meta {
+        flex: 0 0 auto;
+        margin-bottom: 8px;
       }
 
       .meta-chip {
         display: inline-flex;
         align-items: center;
-        min-height: 32px;
-        padding: 6px 10px;
+        min-height: 28px;
+        padding: 5px 9px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--surface);
@@ -148,35 +153,46 @@
         fill: currentColor;
       }
 
-      .toolbar {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 12px;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-
       .segmented {
         display: inline-grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        width: min(480px, 100%);
-        padding: 4px;
-        border: 1px solid var(--line);
+        width: 100%;
+        padding: 5px;
+        border: 2px solid rgba(36, 80, 90, 0.22);
         border-radius: var(--radius);
-        background: var(--surface);
+        background: #dfe9eb;
+        box-shadow: 0 10px 28px rgba(20, 33, 38, 0.1);
       }
 
       .segmented button {
         min-height: 38px;
+        border: 1px solid transparent;
         border-radius: 6px;
-        background: transparent;
-        color: var(--muted);
+        background: rgba(255, 255, 255, 0.68);
+        color: var(--accent-strong);
         cursor: pointer;
+        font-size: 1rem;
+        font-weight: 800;
+        transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+      }
+
+      .segmented button:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(20, 33, 38, 0.1);
       }
 
       .segmented button[aria-pressed="true"] {
         background: var(--accent);
+        border-color: var(--accent);
         color: #fff;
+        box-shadow: 0 8px 18px rgba(36, 80, 90, 0.22);
+      }
+
+      .segmented button:focus-visible {
+        outline: 3px solid rgba(36, 80, 90, 0.28);
+        outline-offset: 2px;
       }
 
       .actions {
@@ -186,12 +202,16 @@
         justify-content: flex-end;
       }
 
+      .panel-actions {
+        flex: 0 0 auto;
+      }
+
       .button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 38px;
-        padding: 9px 13px;
+        min-height: 34px;
+        padding: 7px 11px;
         border-radius: var(--radius);
         cursor: pointer;
         transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
@@ -225,14 +245,37 @@
       }
 
       .workspace {
+        flex: 1 1 auto;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 12px;
+        gap: 10px;
         align-items: stretch;
+        min-height: 0;
+      }
+
+      .result-stack {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .result-controls {
+        display: grid;
+        flex: 0 0 auto;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .result-stack > .panel {
+        flex: 1 1 auto;
       }
 
       .panel {
+        display: flex;
+        flex-direction: column;
         min-width: 0;
+        min-height: 0;
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--surface);
@@ -240,11 +283,12 @@
       }
 
       .panel-head {
+        flex: 0 0 auto;
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
-        padding: 14px 16px;
+        padding: 10px 12px;
         border-bottom: 1px solid var(--line);
       }
 
@@ -262,23 +306,41 @@
       }
 
       .panel-body {
-        padding: 14px 16px 16px;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 10px 12px 12px;
       }
 
       .session-guide {
-        margin: 0 0 12px;
-        padding: 13px 14px;
+        flex: 0 0 auto;
+        margin: 0 0 8px;
+        padding: 9px 12px;
         border: 1px solid rgba(36, 80, 90, 0.34);
         border-left: 5px solid var(--accent);
         border-radius: var(--radius);
         background: #eaf5f7;
         color: var(--text);
-        line-height: 1.5;
+        line-height: 1.38;
+      }
+
+      .session-guide h2 {
+        margin: 0 0 4px;
+        color: var(--text);
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+
+      .session-guide .guide-intro {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.9rem;
       }
 
       .session-guide strong {
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         color: var(--accent-strong);
         font-size: 0.98rem;
       }
@@ -286,7 +348,7 @@
       .session-guide p {
         margin: 0;
         color: #33464d;
-        font-size: 0.9rem;
+        font-size: 0.86rem;
       }
 
       .session-guide a {
@@ -297,82 +359,114 @@
       }
 
       .session-guide .session-warning {
-        margin-top: 7px;
+        margin-top: 5px;
         color: var(--danger);
         font-weight: 700;
       }
 
-      .discord-card {
-        position: relative;
+      .shop-card {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 12px 14px;
-        align-items: start;
-        margin-bottom: 12px;
-        padding: 14px 14px 52px;
-        border: 1px solid rgba(88, 101, 242, 0.28);
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 9px;
+        align-items: center;
+        padding: 7px 10px;
+        border: 1px solid rgba(30, 107, 80, 0.28);
         border-radius: var(--radius);
-        background: #f3f5ff;
-        color: #243064;
+        background: #eef8f4;
+        color: #173f32;
         text-decoration: none;
       }
 
-      .discord-card:hover {
-        border-color: rgba(88, 101, 242, 0.5);
-        background: #eef1ff;
+      .shop-card:hover {
+        border-color: rgba(30, 107, 80, 0.5);
+        background: #e5f3ed;
       }
 
-      .discord-icon {
+      .shop-icon {
         display: grid;
-        width: 44px;
-        height: 44px;
+        width: 32px;
+        height: 32px;
         place-items: center;
         border-radius: var(--radius);
-        background: #5865f2;
+        background: var(--success);
         color: #fff;
       }
 
-      .discord-icon svg {
-        width: 27px;
-        height: 27px;
-        fill: currentColor;
+      .shop-icon svg {
+        width: 21px;
+        height: 21px;
+        stroke: currentColor;
       }
 
-      .discord-copy strong {
+      .shop-copy {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 9px;
+        align-items: baseline;
+        min-width: 0;
+      }
+
+      .shop-copy strong {
         display: block;
-        margin-bottom: 4px;
-        color: #1f2a62;
-        font-size: 0.98rem;
-        line-height: 1.35;
+        margin: 0;
+        color: #123f31;
+        font-size: 0.92rem;
+        line-height: 1.2;
+        white-space: nowrap;
       }
 
-      .discord-copy span {
+      .shop-copy span {
         display: block;
-        color: #46517f;
-        font-size: 0.88rem;
-        line-height: 1.45;
+        color: #3e6558;
+        font-size: 0.8rem;
+        line-height: 1.25;
       }
 
-      .discord-action {
-        position: absolute;
-        right: 14px;
-        bottom: 14px;
-        min-height: 32px;
-        padding: 6px 12px;
+      .shop-action {
+        min-height: 28px;
+        padding: 5px 10px;
         border-radius: 6px;
-        background: #5865f2;
+        background: var(--success);
         color: #fff;
         font-weight: 800;
         white-space: nowrap;
-        box-shadow: 0 8px 18px rgba(88, 101, 242, 0.22);
+        box-shadow: 0 8px 18px rgba(30, 107, 80, 0.22);
       }
 
       .input-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: space-between;
-        margin-bottom: 12px;
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        padding: 5px;
+        border: 2px solid rgba(36, 80, 90, 0.22);
+        border-radius: var(--radius);
+        background: #dfe9eb;
+        box-shadow: 0 10px 28px rgba(20, 33, 38, 0.1);
+        margin-bottom: 8px;
+      }
+
+      .input-actions .button {
+        min-height: 38px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.68);
+        color: var(--accent-strong);
+        font-size: 1rem;
+        font-weight: 800;
+        transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+      }
+
+      .input-actions .button:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(20, 33, 38, 0.1);
+      }
+
+      .input-actions .button:focus-visible {
+        outline: 3px solid rgba(36, 80, 90, 0.28);
+        outline-offset: 2px;
       }
 
       .textarea-shell {
@@ -380,13 +474,14 @@
       }
 
       textarea {
+        flex: 1 1 auto;
         display: block;
         width: 100%;
-        min-height: 430px;
-        resize: vertical;
+        min-height: 0;
+        resize: none;
         border: 1px solid var(--line);
         border-radius: var(--radius);
-        padding: 12px;
+        padding: 10px;
         background: #fbfcfd;
         color: var(--text);
         font-family: var(--mono);
@@ -404,16 +499,23 @@
         background: #f8fafb;
       }
 
+      #session-input {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-top: 5px;
+      }
+
       .summary {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
-        margin-bottom: 12px;
+        flex: 0 0 auto;
+        margin-bottom: 8px;
       }
 
       .stat {
-        min-height: 72px;
-        padding: 10px;
+        min-height: 54px;
+        padding: 8px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--surface-soft);
@@ -433,8 +535,9 @@
 
       .accounts {
         overflow: auto;
-        max-height: 212px;
-        margin-bottom: 12px;
+        flex: 0 0 auto;
+        max-height: 132px;
+        margin-bottom: 8px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
       }
@@ -448,7 +551,7 @@
 
       th,
       td {
-        padding: 9px 10px;
+        padding: 7px 9px;
         border-bottom: 1px solid var(--line);
         text-align: left;
         vertical-align: top;
@@ -491,8 +594,9 @@
       }
 
       .status-line {
-        min-height: 22px;
-        margin-top: 10px;
+        flex: 0 0 auto;
+        min-height: 18px;
+        margin-top: 6px;
         color: var(--muted);
         font-size: 0.88rem;
         line-height: 1.45;
@@ -508,8 +612,9 @@
 
       .issues {
         display: none;
-        margin: 0 0 12px;
-        padding: 10px 12px;
+        flex: 0 0 auto;
+        margin: 0 0 8px;
+        padding: 8px 10px;
         border: 1px solid rgba(163, 59, 59, 0.22);
         border-radius: var(--radius);
         background: #fff7f7;
@@ -523,8 +628,9 @@
       }
 
       .notice {
-        margin: 0 0 12px;
-        padding: 10px 12px;
+        flex: 0 0 auto;
+        margin: 0 0 8px;
+        padding: 8px 10px;
         border: 1px solid rgba(138, 90, 20, 0.22);
         border-radius: var(--radius);
         background: #fffaf0;
@@ -538,8 +644,19 @@
       }
 
       @media (max-width: 960px) {
+        html,
+        body {
+          height: auto;
+          overflow: auto;
+        }
+
+        .app {
+          height: auto;
+          min-height: 100dvh;
+          overflow: visible;
+        }
+
         .topbar,
-        .toolbar,
         .workspace {
           grid-template-columns: 1fr;
         }
@@ -553,12 +670,34 @@
           justify-content: flex-start;
         }
 
-        .workspace {
-          display: block;
+        .panel-head {
+          flex-wrap: wrap;
         }
 
-        .panel + .panel {
+        .workspace {
+          display: block;
+          min-height: auto;
+        }
+
+        .result-stack {
           margin-top: 12px;
+          min-height: auto;
+        }
+
+        .panel,
+        .panel-body {
+          min-height: auto;
+        }
+
+        textarea {
+          min-height: 320px;
+          resize: vertical;
+        }
+
+        #session-input {
+          flex: 1 1 auto;
+          min-height: 320px;
+          margin-top: 0;
         }
       }
 
@@ -568,12 +707,7 @@
           padding-top: 14px;
         }
 
-        .toolbar {
-          display: block;
-        }
-
         .segmented {
-          width: 100%;
           margin-bottom: 10px;
         }
 
@@ -591,8 +725,8 @@
           grid-template-columns: 1fr;
         }
 
-        .discord-card {
-          grid-template-columns: auto minmax(0, 1fr);
+        .shop-card {
+          grid-template-columns: auto minmax(0, 1fr) auto;
         }
 
         .col-expiry,
@@ -620,57 +754,50 @@
     <main class="app">
       <header class="topbar">
         <div class="title-block">
-          <p class="eyebrow">Local JSON Converter</p>
-          <h1>ChatGPT Session Converter</h1>
-          <div class="title-targets" aria-label="支持输出格式">
-            <span>CPA</span>
-            <span>sub2api</span>
-            <span>Cockpit</span>
-            <span>9router</span>
-          </div>
+          <h1>GPT格式转换</h1>
+          <span class="title-separator" aria-hidden="true">·</span>
+          <p class="eyebrow">本地解析</p>
         </div>
-        <div class="meta-row" aria-label="处理方式">
-          <span class="meta-chip">浏览器本地解析</span>
-          <span class="meta-chip">不上传 token</span>
-          <span class="meta-chip">不写入存储</span>
-          <a
-            class="meta-chip github-link"
-            href="https://github.com/gtxx3600/GPTSession2CPAandSub2API"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="本页面代码开源"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.24c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 5.78c1.02 0 2.05.14 3.01.41 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.93.43.37.82 1.1.82 2.22v3.3c0 .32.22.7.83.58A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
+        <a class="shop-card" href="https://pay.ldxp.cn/shop/G09AC5SS" target="_blank" rel="noreferrer">
+          <span class="shop-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8h12l1 12H5L6 8Z" />
+              <path d="M9 8a3 3 0 0 1 6 0" />
+              <path d="M8 13h8" />
+              <path d="M8 17h5" />
             </svg>
-            <span>本页面代码开源</span>
-          </a>
-        </div>
+          </span>
+          <span class="shop-copy">
+            <strong>大熊AI小店</strong>
+            <span>提供各类AI账号购买和充值。</span>
+          </span>
+          <span class="shop-action">进入小店</span>
+        </a>
       </header>
-
-      <section class="toolbar" aria-label="输出控制">
-        <div class="segmented" role="group" aria-label="输出格式">
-          <button type="button" data-format="sub2api" aria-pressed="true">sub2api</button>
-          <button type="button" data-format="cpa" aria-pressed="false">CPA</button>
-          <button type="button" data-format="cockpit" aria-pressed="false">Cockpit</button>
-          <button type="button" data-format="9router" aria-pressed="false">9router</button>
-        </div>
-        <div class="actions">
-          <button class="button button-secondary" id="copy-output" type="button" disabled>复制输出</button>
-          <button class="button button-primary" id="download-output" type="button" disabled>下载 JSON</button>
-        </div>
-      </section>
 
       <section class="workspace">
         <section class="panel" aria-labelledby="input-title">
-          <div class="panel-head">
-            <div>
-              <h2 id="input-title">Session JSON</h2>
-              <p>粘贴 ChatGPT Web session，或拖入一个或多个 JSON 文件。</p>
-            </div>
-          </div>
           <div class="panel-body">
+            <div class="meta-row input-meta" aria-label="处理方式">
+              <span class="meta-chip">浏览器本地解析</span>
+              <span class="meta-chip">不上传 token</span>
+              <span class="meta-chip">不写入存储</span>
+              <a
+                class="meta-chip github-link"
+                href="https://github.com/gtxx3600/GPTSession2CPAandSub2API"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="本页面代码开源"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.24c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 5.78c1.02 0 2.05.14 3.01.41 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.93.43.37.82 1.1.82 2.22v3.3c0 .32.22.7.83.58A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
+                </svg>
+                <span>本页面代码开源</span>
+              </a>
+            </div>
             <div class="session-guide">
+              <h2 id="input-title">把session或json文件转换成其他格式</h2>
+              <p class="guide-intro">粘贴 ChatGPT Web session，或拖入一个或多个 JSON 文件。</p>
               <strong>Session 数据从这里获取</strong>
               <p>
                 先在浏览器登录 ChatGPT，然后打开
@@ -679,22 +806,10 @@
               </p>
               <p class="session-warning">这段 JSON 包含 accessToken 和 sessionToken，等同敏感登录凭证，不要发给别人。</p>
             </div>
-            <a class="discord-card" href="https://discord.gg/GFmHY2TZNy" target="_blank" rel="noreferrer">
-              <span class="discord-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a13.8 13.8 0 0 0-.64 1.31 18.4 18.4 0 0 0-5.44 0 13.8 13.8 0 0 0-.65-1.31 19.7 19.7 0 0 0-4.96 1.54C.54 9.04-.31 13.6.1 18.1a19.9 19.9 0 0 0 6.08 3.08c.49-.67.93-1.38 1.3-2.13a12.8 12.8 0 0 1-2.05-.98c.17-.13.34-.26.5-.39a14.2 14.2 0 0 0 12.14 0c.17.14.33.27.5.39-.65.39-1.34.72-2.06.99.38.74.81 1.45 1.3 2.12a19.9 19.9 0 0 0 6.09-3.08c.48-5.22-.82-9.74-3.58-13.73ZM8.02 15.33c-1.19 0-2.16-1.08-2.16-2.41 0-1.33.95-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.41-2.16 2.41Zm7.96 0c-1.19 0-2.16-1.08-2.16-2.41 0-1.33.95-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.41-2.16 2.41Z" />
-                </svg>
-              </span>
-              <span class="discord-copy">
-                <strong>加入 Discord 频道免费获取 GPT 撸羊毛信息</strong>
-                <span>本工具主要针对 Plus 账号适用，Free 账号即使转换了也没有权限调用 GPT 模型。GoPay 拉闸了，没法每天发 Plus 了；加入 Discord 频道免费获取 GPT 撸羊毛信息，然后配合本工具导入 CPA or Sub2API 使用。</span>
-              </span>
-              <span class="discord-action">加入频道</span>
-            </a>
             <input class="hidden" id="file-input" type="file" accept=".json,application/json" multiple />
             <div class="input-actions">
-              <button class="button button-secondary" id="pick-files" type="button">选择文件</button>
-              <button class="button button-secondary" id="load-example" type="button">填入示例结构</button>
+              <button class="button button-secondary" id="pick-files" type="button">上传json文件</button>
+              <button class="button button-secondary" id="load-example" type="button">展示示例结构</button>
               <button class="button button-ghost" id="clear-input" type="button">清空</button>
             </div>
             <textarea
@@ -706,59 +821,74 @@
           </div>
         </section>
 
-        <section class="panel" aria-labelledby="output-title">
-          <div class="panel-head">
-            <div>
-              <h2 id="output-title">转换结果</h2>
-              <p id="output-subtitle">当前输出为 sub2api 导入 JSON。</p>
+        <div class="result-stack">
+          <section class="result-controls" aria-label="输出控制">
+            <div class="segmented" role="group" aria-label="输出格式">
+              <button type="button" data-format="sub2api" aria-pressed="true">sub2api</button>
+              <button type="button" data-format="cpa" aria-pressed="false">CPA</button>
+              <button type="button" data-format="cockpit" aria-pressed="false">Cockpit</button>
+              <button type="button" data-format="9router" aria-pressed="false">9router</button>
             </div>
-          </div>
-          <div class="panel-body">
-            <p class="notice" id="cpa-notice">
-              ChatGPT Web session 一般没有 `refresh_token`；缺少真实 `id_token` 时会构造 CPA/Cockpit 可解析的占位 claims，实际调用仍依赖 access token。
-            </p>
-            <div class="summary" aria-label="转换统计">
-              <div class="stat">
-                <div class="stat-value" id="stat-count">0</div>
-                <div class="stat-label">账号数</div>
+          </section>
+
+          <section class="panel" aria-labelledby="output-title">
+            <div class="panel-head">
+              <div>
+                <h2 id="output-title">转换结果</h2>
+                <p id="output-subtitle">当前输出为 sub2api 导入 JSON。</p>
               </div>
-              <div class="stat">
-                <div class="stat-value" id="stat-format">sub2api</div>
-                <div class="stat-label">输出格式</div>
-              </div>
-              <div class="stat">
-                <div class="stat-value" id="stat-errors">0</div>
-                <div class="stat-label">跳过项</div>
+              <div class="actions panel-actions">
+                <button class="button button-secondary" id="copy-output" type="button" disabled>复制输出</button>
+                <button class="button button-primary" id="download-output" type="button" disabled>下载 JSON</button>
               </div>
             </div>
-            <div class="accounts" aria-label="账号预览">
-              <table>
-                <colgroup>
-                  <col class="col-name" />
-                  <col class="col-email" />
-                  <col class="col-expiry" />
-                  <col class="col-type" />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th>名称</th>
-                    <th>邮箱</th>
-                    <th>过期时间</th>
-                    <th>来源</th>
-                  </tr>
-                </thead>
-                <tbody id="account-body">
-                  <tr>
-                    <td colspan="4" class="empty">暂无可转换账号。</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="panel-body">
+              <p class="notice" id="cpa-notice">
+                ChatGPT Web session 一般没有 `refresh_token`；缺少真实 `id_token` 时会构造 CPA/Cockpit 可解析的占位 claims，实际调用仍依赖 access token。
+              </p>
+              <div class="summary" aria-label="转换统计">
+                <div class="stat">
+                  <div class="stat-value" id="stat-count">0</div>
+                  <div class="stat-label">账号数</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value" id="stat-format">sub2api</div>
+                  <div class="stat-label">输出格式</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value" id="stat-errors">0</div>
+                  <div class="stat-label">跳过项</div>
+                </div>
+              </div>
+              <div class="accounts" aria-label="账号预览">
+                <table>
+                  <colgroup>
+                    <col class="col-name" />
+                    <col class="col-email" />
+                    <col class="col-expiry" />
+                    <col class="col-type" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>邮箱</th>
+                      <th>过期时间</th>
+                      <th>来源</th>
+                    </tr>
+                  </thead>
+                  <tbody id="account-body">
+                    <tr>
+                      <td colspan="4" class="empty">暂无可转换账号。</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="issues" id="issues"></div>
+              <textarea id="output" readonly spellcheck="false" placeholder="转换后会显示 JSON。"></textarea>
+              <div class="status-line" id="output-status">暂无输出。</div>
             </div>
-            <div class="issues" id="issues"></div>
-            <textarea id="output" readonly spellcheck="false" placeholder="转换后会显示 JSON。"></textarea>
-            <div class="status-line" id="output-status">暂无输出。</div>
-          </div>
-        </section>
+          </section>
+        </div>
       </section>
     </main>
 
