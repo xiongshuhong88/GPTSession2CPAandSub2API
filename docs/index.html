@@ -1248,6 +1248,8 @@
                 item.access_token,
                 item.token?.accessToken,
                 item.token?.access_token,
+                item.tokens?.accessToken,
+                item.tokens?.access_token,
                 item.credentials?.accessToken,
                 item.credentials?.access_token,
               );
@@ -1264,7 +1266,7 @@
               }
 
               for (const [key, child] of Object.entries(item)) {
-                if (key === "accessToken" || key === "access_token" || key === "sessionToken") {
+                if (key === "accessToken" || key === "access_token" || key === "sessionToken" || key === "tokens") {
                   continue;
                 }
                 visit(child, `${path}.${key}`);
@@ -1304,6 +1306,8 @@
             record.access_token,
             record.token?.accessToken,
             record.token?.access_token,
+            record.tokens?.accessToken,
+            record.tokens?.access_token,
             record.credentials?.accessToken,
             record.credentials?.access_token,
           );
@@ -1315,6 +1319,8 @@
             record.session_token,
             record.token?.sessionToken,
             record.token?.session_token,
+            record.tokens?.sessionToken,
+            record.tokens?.session_token,
             record.credentials?.session_token,
           );
           const refreshToken = firstNonEmpty(
@@ -1322,6 +1328,8 @@
             record.refresh_token,
             record.token?.refreshToken,
             record.token?.refresh_token,
+            record.tokens?.refreshToken,
+            record.tokens?.refresh_token,
             record.credentials?.refresh_token,
           );
           const inputIdToken = firstNonEmpty(
@@ -1329,6 +1337,8 @@
             record.id_token,
             record.token?.idToken,
             record.token?.id_token,
+            record.tokens?.idToken,
+            record.tokens?.id_token,
             record.credentials?.id_token,
           );
 
@@ -1389,7 +1399,11 @@
           const exportedAt = normalizeTimestamp(options.now || new Date());
           const expiresIn = getExpiresIn(expiresAt, options.now || new Date());
           const sourceName = firstNonEmpty(options.sourceName, "pasted-json");
-          const sourceType = record.provider === "codex" && record.authType === "oauth" ? "9router" : "chatgpt_web_session";
+          const sourceType = record.provider === "codex" && record.authType === "oauth"
+            ? "9router"
+            : isPlainObject(record.tokens)
+              ? "cockpit_export"
+              : "chatgpt_web_session";
           const name = firstNonEmpty(email, sourceName, "ChatGPT Account");
           const syntheticIdToken = !inputIdToken
             ? buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt, payload)
@@ -1435,6 +1449,9 @@
             priority: 1,
             credentials: {
               access_token: accessToken,
+              refresh_token: refreshToken || undefined,
+              id_token: idToken,
+              session_token: sessionToken || undefined,
               chatgpt_account_id: accountId,
               chatgpt_user_id: userId,
               email,
