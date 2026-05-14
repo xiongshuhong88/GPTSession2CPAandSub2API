@@ -844,7 +844,7 @@
             </div>
             <div class="panel-body">
               <p class="notice" id="cpa-notice">
-                ChatGPT Web session 一般没有 `refresh_token`；缺少真实 `id_token` 时会构造 CPA/Cockpit 可解析的占位 claims，实际调用仍依赖 access token。
+                ChatGPT Web session 一般没有 `refresh_token` 和真实 `id_token`；缺少真实 `id_token` 时会生成随机 RS256 JWT 形状 token 来兼容 CPA/Cockpit 导入。
               </p>
               <div class="summary" aria-label="转换统计">
                 <div class="stat">
@@ -1004,6 +1004,34 @@
           }
         }
 
+        function encodeBase64UrlBytes(bytes) {
+          let binary = "";
+          bytes.forEach((byte) => {
+            binary += String.fromCharCode(byte);
+          });
+          return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+        }
+
+        function randomBase64Url(byteLength) {
+          const bytes = new Uint8Array(byteLength);
+          if (globalThis.crypto?.getRandomValues) {
+            globalThis.crypto.getRandomValues(bytes);
+          } else {
+            bytes.forEach((_, index) => {
+              bytes[index] = Math.floor(Math.random() * 256);
+            });
+          }
+          return encodeBase64UrlBytes(bytes);
+        }
+
+        function randomUuid() {
+          if (globalThis.crypto?.randomUUID) {
+            return globalThis.crypto.randomUUID();
+          }
+          const hex = randomBase64Url(16).replace(/[-_]/g, "").slice(0, 32).padEnd(32, "0");
+          return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+        }
+
         function getOpenAIAuthSection(payload) {
           if (!isPlainObject(payload)) {
             return {};
@@ -1065,12 +1093,18 @@
           return Number.isFinite(parsed) ? Math.trunc(parsed / 1000) : 0;
         }
 
-        function buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt) {
+        function buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt, sourcePayload = {}) {
           if (!accountId) {
             return undefined;
           }
 
           const now = Math.trunc(Date.now() / 1000);
+          const sourceAuth = getOpenAIAuthSection(sourcePayload);
+          const sourceProfile = getOpenAIProfileSection(sourcePayload);
+          const issuedAt = Number(sourcePayload?.iat) || now;
+          const clientId = firstNonEmpty(sourcePayload?.client_id, "app_X8zY6vW2pQ9tR3dE7nK1jL5gH");
+          const tokenEmail = firstNonEmpty(email, sourceProfile.email);
+          const tokenUserId = firstNonEmpty(userId, sourceAuth.chatgpt_user_id, sourceAuth.user_id);
           const authInfo = { chatgpt_account_id: accountId };
           const expires = epochSecondsFromValue(expiresAt) || now + 90 * 24 * 60 * 60;
 
@@ -1078,22 +1112,37 @@
             authInfo.chatgpt_plan_type = planType;
           }
 
-          if (userId) {
-            authInfo.chatgpt_user_id = userId;
-            authInfo.user_id = userId;
+          if (tokenUserId) {
+            authInfo.chatgpt_user_id = tokenUserId;
+            authInfo.user_id = tokenUserId;
+          }
+
+          authInfo.groups = sourceAuth.groups || [];
+          authInfo.localhost = sourceAuth.localhost ?? true;
+
+          if (sourceAuth.organizations) {
+            authInfo.organizations = sourceAuth.organizations;
           }
 
           const payload = {
-            iat: now,
+            amr: sourceAuth.amr || ["otp", "urn:openai:amr:otp_email"],
+            aud: [clientId],
+            auth_provider: "passwordless",
+            auth_time: Number(sourcePayload?.pwd_auth_time) || issuedAt,
+            email: tokenEmail,
+            email_verified: sourceProfile.email_verified ?? true,
             exp: expires,
             "https://api.openai.com/auth": authInfo,
+            iat: issuedAt,
+            iss: sourcePayload?.iss || "https://auth.openai.com",
+            jti: randomUuid(),
+            name: tokenEmail ? tokenEmail.split("@")[0] : "ChatGPT Account",
+            rat: issuedAt,
+            sid: sourcePayload?.session_id || randomUuid(),
+            sub: sourcePayload?.sub || `auth0|${randomBase64Url(18)}`,
           };
 
-          if (email) {
-            payload.email = email;
-          }
-
-          return `${encodeBase64UrlJson({ alg: "none", typ: "JWT", cpa_synthetic: true })}.${encodeBase64UrlJson(payload)}.`;
+          return `${encodeBase64UrlJson({ alg: "RS256", kid: randomUuid(), typ: "JWT" })}.${encodeBase64UrlJson(payload)}.${randomBase64Url(256)}`;
         }
 
         function getExpiresIn(expiresAt, now = new Date()) {
@@ -1343,7 +1392,7 @@
           const sourceType = record.provider === "codex" && record.authType === "oauth" ? "9router" : "chatgpt_web_session";
           const name = firstNonEmpty(email, sourceName, "ChatGPT Account");
           const syntheticIdToken = !inputIdToken
-            ? buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt)
+            ? buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt, payload)
             : undefined;
           const idToken = firstNonEmpty(inputIdToken, syntheticIdToken);
 
@@ -1370,6 +1419,7 @@
             id_token: idToken,
             access_token: accessToken,
             refresh_token: refreshToken || "",
+            session_token: sessionToken || undefined,
             account_id: accountId,
             last_refresh: exportedAt,
             email,
